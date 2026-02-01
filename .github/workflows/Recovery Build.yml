@@ -103,8 +103,39 @@ jobs:
 
     - name: Clone device tree
       run: |
-        cd ${{ steps.pwd.outputs.workspace-folder }}/fox_${{ github.event.inputs.MANIFEST_BRANCH }}
+        FOX_DIR="${{ steps.pwd.outputs.workspace-folder }}/fox_${{ github.event.inputs.MANIFEST_BRANCH }}"
+        
+        echo "=== 调试信息 ==="
+        echo "OrangeFox 源码目录: $FOX_DIR"
+        echo "设备树 URL: ${{ github.event.inputs.DEVICE_TREE_URL }}"
+        echo "设备树分支: ${{ github.event.inputs.DEVICE_TREE_BRANCH }}"
+        echo "设备树路径: ${{ github.event.inputs.DEVICE_PATH }}"
+        echo "================"
+        
+        # 检查 OrangeFox 源码目录是否存在
+        if [ ! -d "$FOX_DIR" ]; then
+          echo "❌ OrangeFox 源码目录不存在: $FOX_DIR"
+          echo "可能是 orangefox_sync.sh 失败"
+          exit 1
+        fi
+        
+        echo "✅ OrangeFox 源码目录存在"
+        
+        # 进入 OrangeFox 源码目录
+        cd "$FOX_DIR"
+        
+        # 克隆设备树
+        echo "开始克隆设备树..."
         git clone ${{ github.event.inputs.DEVICE_TREE_URL }} -b ${{ github.event.inputs.DEVICE_TREE_BRANCH }} ./${{ github.event.inputs.DEVICE_PATH }}
+        
+        # 检查克隆是否成功
+        if [ $? -eq 0 ]; then
+          echo "✅ 设备树克隆成功"
+          ls -la ./${{ github.event.inputs.DEVICE_PATH }}/
+        else
+          echo "❌ 设备树克隆失败"
+          exit 1
+        fi
       working-directory: ${{ steps.pwd.outputs.workspace-folder }}
 
     - name: Clone common tree
