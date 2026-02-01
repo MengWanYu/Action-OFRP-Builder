@@ -85,7 +85,7 @@ jobs:
         java-version: '11'
 
     - name: Setup SSH Keys
-      if: ${{ startsWith(github.event.inputs.MANIFEST_URL, 'git@github.com') || 
+      if: ${{ startsWith(github.event.inputs.SYNC_URL, 'git@') ||
           startsWith(github.event.inputs.DEVICE_TREE_URL, 'git@github.com') ||
           startsWith(github.event.inputs.COMMON_TREE_URL, 'git@github.com') }}
       uses: webfactory/ssh-agent@v0.9.0
@@ -115,6 +115,25 @@ jobs:
         cd ${{ steps.pwd.outputs.workspace-folder }}/fox_${{ github.event.inputs.MANIFEST_BRANCH }}
         git clone ${{ github.event.inputs.COMMON_TREE_URL }} -b ${{ github.event.inputs.DEVICE_TREE_BRANCH }} ./${{ github.event.inputs.COMMON_PATH }}
       working-directory: ${{ steps.pwd.outputs.workspace-folder }}
+
+    - name: Sync Device Dependencies
+      run: |
+        DEPS_FILE="${{ github.event.inputs.DEVICE_PATH }}/of.dependencies"
+        SCRIPT_PATH="${GITHUB_WORKSPACE}/scripts/convert.sh"
+        echo "=== 调试信息 ==="
+        echo "工作目录: $(pwd)"
+        echo "脚本路径: $SCRIPT_PATH"
+        echo "依赖文件: $DEPS_FILE"
+        echo "依赖文件是否存在: [ -f ${DEPS_FILE} ] && echo '存在' || echo '不存在'"
+        echo "================"
+        if [ -f "${{ steps.pwd.outputs.workspace-folder }}/fox_${{ github.event.inputs.MANIFEST_BRANCH }}/${DEPS_FILE}" ]; then
+          cd ${{ steps.pwd.outputs.workspace-folder }}/fox_${{ github.event.inputs.MANIFEST_BRANCH }}
+          repo sync -j$(nproc --all)
+        else
+          echo "⚠️  依赖文件不存在，跳过同步: $DEPS_FILE"
+        fi
+      working-directory: ${{ steps.pwd.outputs.workspace-folder }}/fox_${{ github.event.inputs.MANIFEST_BRANCH }}
+      continue-on-error: true
 
     - name: Set Swap Space
       uses: pierotofy/set-swap-space@master
