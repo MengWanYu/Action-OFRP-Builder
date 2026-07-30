@@ -173,14 +173,24 @@ jobs:
 
     - name: Building recovery
       run: |
-        cd ${{ steps.pwd.outputs.workspace-folder }}/fox_${{ github.event.inputs.MANIFEST_BRANCH }}
-        set +e
-        source build/envsetup.sh
+        FOX_DIR="${{ steps.pwd.outputs.workspace-folder }}/fox_${{ github.event.inputs.MANIFEST_BRANCH }}"
+        echo "=== DEBUG: Build directory ==="
+        echo "FOX_DIR: $FOX_DIR"
+        ls -la "$FOX_DIR/" || echo "FATAL: fox directory missing!"
+        ls "$FOX_DIR/build/envsetup.sh" || echo "FATAL: envsetup.sh missing!"
+        echo "=== DEBUG: Disk space ==="
+        df -h "$FOX_DIR"
+        echo "=== DEBUG: Starting build ==="
+        cd "$FOX_DIR"
+        source build/envsetup.sh || { echo "FATAL: source build/envsetup.sh failed"; exit 1; }
         export ALLOW_MISSING_DEPENDENCIES=true
-        set -e
-        lunch ${{ github.event.inputs.MAKEFILE_NAME }}-eng && make clean && mka adbd ${{ github.event.inputs.BUILD_TARGET }}image -j$(nproc --all)
+        LUNCH_TARGET="${{ github.event.inputs.MAKEFILE_NAME }}-eng"
+        echo "=== Lunching: $LUNCH_TARGET ==="
+        lunch $LUNCH_TARGET || { echo "FATAL: lunch failed"; exit 1; }
+        echo "=== Lunch OK, building ==="
+        make clean
+        mka adbd ${{ github.event.inputs.BUILD_TARGET }}image -j$(nproc --all)
       working-directory: ${{ steps.pwd.outputs.workspace-folder }}
-      continue-on-error: true
 
     - name: Check the output directory before uploading
       run: |
