@@ -189,7 +189,7 @@ jobs:
         lunch $LUNCH_TARGET || { echo "FATAL: lunch failed"; exit 1; }
         echo "=== Lunch OK, building ==="
         make clean
-        mka adbd bootimage vendor_bootimage -j$(nproc --all)
+        mka adbd bootimage -j$(nproc --all)
       working-directory: ${{ steps.pwd.outputs.workspace-folder }}
 
     - name: Check the output directory before uploading
@@ -202,11 +202,11 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          ${{ steps.pwd.outputs.workspace-folder }}/fox_${{ github.event.inputs.MANIFEST_BRANCH }}/out/target/product/${{ github.event.inputs.DEVICE_NAME }}/boot.img
-          out/target/product/${{ github.event.inputs.DEVICE_NAME }}/vendor_boot.img
-          ${{ steps.pwd.outputs.workspace-folder }}/fox_${{ github.event.inputs.MANIFEST_BRANCH }}/out/target/product/${{ github.event.inputs.DEVICE_NAME }}/*.zip
+          ${{ steps.pwd.outputs.workspace-folder }}/fox_${{ github.event.inputs.MANIFEST_BRANCH }}/out/target/product/${{ github.event.inputs.DEVICE_NAME }}/*recovery*.img
           out/target/product/${{ github.event.inputs.DEVICE_NAME }}/boot.img
-          out/target/product/${{ github.event.inputs.DEVICE_NAME }}/vendor_boot.img
+          ${{ steps.pwd.outputs.workspace-folder }}/fox_${{ github.event.inputs.MANIFEST_BRANCH }}/out/target/product/${{ github.event.inputs.DEVICE_NAME }}/*.zip
+          out/target/product/${{ github.event.inputs.DEVICE_NAME }}/*recovery*.img
+          out/target/product/${{ github.event.inputs.DEVICE_NAME }}/boot.img
         name: ${{ github.event.inputs.DEVICE_NAME }}-${{ github.run_id }}
         tag_name: ${{ github.run_id }}
         body: |
